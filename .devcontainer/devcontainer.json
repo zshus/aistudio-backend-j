@@ -1,0 +1,29 @@
+{
+  "name": "backend-j (Spring Boot + PostgreSQL)",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspaces/backend-j",
+  "shutdownAction": "stopCompose",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "vmware.vscode-spring-boot",
+        "ms-azuretools.vscode-docker"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  },
+
+  "forwardPorts": [8080, 5432],
+
+  "portsAttributes": {
+    "8080": { "label": "Spring Boot", "onAutoForward": "openBrowser" },
+    "5432": { "label": "PostgreSQL" }
+  },
+
+  "postCreateCommand": "java -version && mvn -v || ./mvnw -v"
+}

@@ -1,0 +1,28 @@
+version: "3.9"
+
+services:
+  app:
+    image: mcr.microsoft.com/devcontainers/java:21
+    volumes:
+      - ..:/workspaces/backend-j:cached
+    environment:
+      TZ: Asia/Seoul
+    depends_on:
+      - postgres
+    command: sleep infinity
+
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: backendj
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      TZ: Asia/Seoul
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
