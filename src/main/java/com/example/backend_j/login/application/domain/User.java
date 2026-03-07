@@ -1,4 +1,4 @@
-package com.example.backend_j.entity;
+package com.example.backend_j.login.application.domain;
 
 import jakarta.persistence.*;
 import lombok.Getter;

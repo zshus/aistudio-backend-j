@@ -1,7 +1,8 @@
-package com.example.backend_j.repository;
+package com.example.backend_j.login.infrastructrue;
 
-import com.example.backend_j.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.example.backend_j.login.application.domain.User;
 
 import java.util.Optional;
 

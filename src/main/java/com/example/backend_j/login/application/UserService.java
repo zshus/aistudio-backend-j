@@ -1,15 +1,21 @@
-package com.example.backend_j.service;
+package com.example.backend_j.login.application;
 
-import com.example.backend_j.dto.LoginRequest;
-import com.example.backend_j.dto.LoginResponse;
-import com.example.backend_j.dto.RegisterRequest;
-import com.example.backend_j.entity.User;
-import com.example.backend_j.repository.UserRepository;
+import com.example.backend_j.login.application.domain.User;
+import com.example.backend_j.login.controller.request.LoginRequest;
+import com.example.backend_j.login.controller.request.RegisterRequest;
+import com.example.backend_j.login.controller.response.LoginResponse;
+import com.example.backend_j.login.controller.response.UserResponse;
+import com.example.backend_j.login.infrastructrue.UserRepository;
 import com.example.backend_j.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j;
+
+import java.util.List;
+import lombok.extern.slf4j.Slf4j; 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -44,4 +50,10 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         userRepository.save(user);
     }
+
+    public List<UserResponse> getAllList(){
+        log.info("사용자 목록 조회 시작"); 
+        return UserResponse.form(userRepository.findAll());
+    }
+
 }

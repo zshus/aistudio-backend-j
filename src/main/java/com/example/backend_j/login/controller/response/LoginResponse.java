@@ -1,4 +1,4 @@
-package com.example.backend_j.dto;
+package com.example.backend_j.login.controller.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

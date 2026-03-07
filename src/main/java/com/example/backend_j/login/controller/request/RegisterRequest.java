@@ -1,4 +1,4 @@
-package com.example.backend_j.dto;
+package com.example.backend_j.login.controller.request;
 
 import lombok.Getter;
 import lombok.Setter;
