@@ -8,8 +8,6 @@ import com.example.backend_j.login.controller.response.UserResponse;
 import com.example.backend_j.login.infrastructrue.UserRepository;
 import com.example.backend_j.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j;
-
 import java.util.List;
 import lombok.extern.slf4j.Slf4j; 
 import org.springframework.security.crypto.password.PasswordEncoder;
