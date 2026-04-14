@@ -3,6 +3,7 @@ package com.example.backend_j.vector.infrastructrue;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Service;
@@ -29,12 +30,18 @@ public class VectorClientService {
             builder.part("file_id", fileId);
             builder.part("file_name", fileName);
             builder.part("folder_id", folderId);
-            builder.part("file", new ByteArrayResource(file.getBytes()) {
-                @Override
+            builder.part("file", new InputStreamResource(file.getInputStream()) {                                                                                                                                  
+                @Override   
                 public String getFilename() {
                     return fileName;
                 }
+                @Override
+                public long contentLength() {                                                                                                                                                                      
+                    return file.getSize();
+                }                                                                                                                                                                                                  
             }).contentType(MediaType.APPLICATION_OCTET_STREAM);
+
+            
 
             restClient.post()
                     .uri("/api/v1/embed")
