@@ -19,6 +19,7 @@ import com.example.backend_j.vector.application.repository.FolderRepository;
 import com.example.backend_j.vector.application.repository.LocalUploadsRepository;
 import com.example.backend_j.vector.controller.response.FileResponse;
 import com.example.backend_j.vector.controller.response.FolderResponse;
+import com.example.backend_j.vector.infrastructrue.VectorClientService;
 
 @Slf4j
 @Service
@@ -28,6 +29,7 @@ public class VectorService {
     private final FolderRepository folderRepository;
     private final FileRepository fileRepository;
     private final LocalUploadsRepository localUploadsRepository;
+    private final VectorClientService vectorClientService;
 
     @Transactional
     public FolderResponse createFolder(CreateFolderCommand command){
@@ -75,6 +77,8 @@ public class VectorService {
         .build();
         fileRepository.save(dVdbFile);
 
+        vectorClientService.embed(dVdbFile.getId(), dVdbFile.getFileName(), dVdbFile.getFolderId(), file);
+
         return FileResponse.form(dVdbFile);
       }
 
@@ -85,6 +89,9 @@ public class VectorService {
         VdbFile find=fileRepository.finById(command.getFileId());
         find.update(storedFile.getOriginalFilename(),storedFile.getRelativePath());
         fileRepository.save(find);
+
+        vectorClientService.deleteEmbed(find.getId());
+        vectorClientService.embed(find.getId(), find.getFileName(), find.getFolderId(), file);
 
         return FileResponse.form(find);
     }
@@ -102,6 +109,8 @@ public class VectorService {
     public FileResponse deleteFile(UpdateFileCommand command){
         VdbFile find=fileRepository.finById(command.getFileId());
         fileRepository.deleteById(command.getFileId());
+
+        vectorClientService.deleteEmbed(find.getId());
 
         return FileResponse.form(find);
     }
