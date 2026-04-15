@@ -58,6 +58,8 @@ public class VectorService {
         folderRepository.deleteById(folder.getId());
         fileRepository.deleteByFolderId(folder.getId());
 
+        vectorClientService.deleteCollection(folder.getId());
+
         return FolderResponse.form(folder);
     }
 
@@ -77,22 +79,34 @@ public class VectorService {
         .build();
         fileRepository.save(dVdbFile);
 
-        vectorClientService.embed(dVdbFile.getId(), dVdbFile.getFileName(), dVdbFile.getFolderId(), file);
+        try {
+            vectorClientService.embed(dVdbFile.getId(), dVdbFile.getFileName(), dVdbFile.getFolderId(), file);
+        } catch (Exception e) {
+            localUploadsRepository.delete(storedFile.getRelativePath());
+            throw e; // @Transactional이 DB 롤백 처리
+        }
 
         return FileResponse.form(dVdbFile);
-      }
+    }
 
     @Transactional
     public FileResponse overwriteFile(MultipartFile file, UpdateFileCommand command){
         StoredFile storedFile=localUploadsRepository.store(file);
 
         VdbFile find=fileRepository.finById(command.getFileId());
+        String oldFilePath=find.getFilePath();
         find.update(storedFile.getOriginalFilename(),storedFile.getRelativePath());
         fileRepository.save(find);
 
-        vectorClientService.deleteEmbed(find.getId());
-        vectorClientService.embed(find.getId(), find.getFileName(), find.getFolderId(), file);
+        try {
+            vectorClientService.deleteEmbed(find.getId(), find.getFolderId());
+            vectorClientService.embed(find.getId(), find.getFileName(), find.getFolderId(), file);
+        } catch (Exception e) {
+            localUploadsRepository.delete(storedFile.getRelativePath());
+            throw e; // @Transactional이 DB 롤백 처리 (이전 파일 정보로 복원)
+        }
 
+        localUploadsRepository.delete(oldFilePath);
         return FileResponse.form(find);
     }
 
@@ -110,7 +124,7 @@ public class VectorService {
         VdbFile find=fileRepository.finById(command.getFileId());
         fileRepository.deleteById(command.getFileId());
 
-        vectorClientService.deleteEmbed(find.getId());
+        vectorClientService.deleteEmbed(find.getId(), find.getFolderId());
 
         return FileResponse.form(find);
     }

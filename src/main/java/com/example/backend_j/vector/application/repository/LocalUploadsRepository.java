@@ -5,5 +5,5 @@ import com.example.backend_j.vector.application.domain.StoredFile;
 
 public interface LocalUploadsRepository {
     StoredFile store(MultipartFile file);
-    
-} 
+    void delete(String relativePath);
+}

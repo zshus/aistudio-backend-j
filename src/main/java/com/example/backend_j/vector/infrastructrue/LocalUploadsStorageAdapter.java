@@ -79,6 +79,19 @@ public class LocalUploadsStorageAdapter implements LocalUploadsRepository {
         }
     }
 
+    @Override
+    public void delete(String relativePath) {
+        Path target = uploadsRoot.resolve(relativePath).normalize();
+        if (!target.startsWith(uploadsRoot)) {
+            throw new IllegalStateException("Invalid storage path");
+        }
+        try {
+            Files.deleteIfExists(target);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to delete file: " + relativePath, e);
+        }
+    }
+
     private String sanitizePathSegment(String segment) {
         String s = segment.trim();
         // path traversal 방지 + 윈도우/유닉스 경로 문자 제거
