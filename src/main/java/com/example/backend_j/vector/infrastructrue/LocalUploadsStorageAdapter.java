@@ -92,14 +92,6 @@ public class LocalUploadsStorageAdapter implements LocalUploadsRepository {
         }
     }
 
-    // private String sanitizePathSegment(String segment) {
-    //     String s = segment.trim();
-    //     // path traversal 방지 + 윈도우/유닉스 경로 문자 제거
-    //     s = s.replace("\\", "_").replace("/", "_");
-    //     s = s.replace("..", "_");
-    //     // 너무 길면 제한
-    //     return s.length() > 50 ? s.substring(0, 50) : s;
-    // }
 
     private String sanitizeFilename(String filename) {
         String s = filename.trim();
