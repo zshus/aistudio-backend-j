@@ -30,8 +30,13 @@ public class FolderRepositoryImpl implements FolderRepository{
     }
 
     @Override
+    public List<Folder> findAllByUseYn(Boolean useYn) {
+        return repository.findAllByUseYn(useYn);
+    }
+
+    @Override
     public void deleteById(Long folderId){
-        repository.deleteById(folderId); 
+        repository.deleteById(folderId);
     }
 
 

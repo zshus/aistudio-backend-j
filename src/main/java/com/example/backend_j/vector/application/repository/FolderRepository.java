@@ -8,6 +8,7 @@ public interface FolderRepository {
     Folder save(Folder folder);
     Folder findById(Long folderId);
     List<Folder> findAll();
+    List<Folder> findAllByUseYn(Boolean useYn);
     void deleteById(Long folderId);
-    
+
 }
