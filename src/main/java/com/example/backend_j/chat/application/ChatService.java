@@ -3,19 +3,15 @@ package com.example.backend_j.chat.application;
 import com.example.backend_j.chat.application.command.*;
 import com.example.backend_j.chat.application.domain.ChatMessage;
 import com.example.backend_j.chat.application.domain.ChatRoom;
-import com.example.backend_j.chat.application.domain.SearchResult;
 import com.example.backend_j.chat.application.repository.ChatMessageRepository;
 import com.example.backend_j.chat.application.repository.ChatRoomRepository;
 import com.example.backend_j.chat.controller.response.ChatMessageResponse;
 import com.example.backend_j.chat.controller.response.ChatRoomResponse;
-import com.example.backend_j.chat.infrastructrue.SearchClientService;
+import com.example.backend_j.chat.infrastructrue.ChatClientService;
 import com.example.backend_j.vector.application.domain.Folder;
-import com.example.backend_j.vector.application.domain.VdbFile;
-import com.example.backend_j.vector.application.repository.FileRepository;
 import com.example.backend_j.vector.application.repository.FolderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -34,9 +30,8 @@ public class ChatService {
 
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMessageRepository chatMessageRepository;
-    private final SearchClientService searchClientService;
+    private final ChatClientService chatClientService;
     private final FolderRepository folderRepository;
-    private final FileRepository fileRepository;
 
     @Transactional
     public ChatRoomResponse createRoom(CreateRoomCommand command) {
@@ -116,60 +111,21 @@ public class ChatService {
     private void streamResponse(SseEmitter emitter, SendMessageCommand command,
                                 List<Folder> targetFolders, int topK,
                                 List<ChatMessageResponse> contextHistory) {
+        List<Long> folderIdList = targetFolders.stream()
+                .map(Folder::getId)
+                .collect(Collectors.toList());
+
         StringBuilder assistantContent = new StringBuilder();
-        try {
-            // 7. 활성 폴더 id 리스트 → Backend-P 단일 호출 → score 내림차순으로 이미 정렬된 결과
-            // contextHistory는 LLM 추가 시 프롬프트 구성에 활용 (현재는 서버 내부 보관)
-            List<Long> folderIdList = targetFolders.stream()
-                    .map(Folder::getId)
-                    .collect(Collectors.toList());
 
-            List<SearchResult> allResults = searchClientService
-                    .search(command.getMessage(), folderIdList, topK);
+        chatClientService.streamQuery(
+                command.getMessage(),
+                contextHistory,
+                folderIdList,
+                topK,
+                emitter
+        );
 
-            // 9. 파일 useYn=true 필터링
-            List<SearchResult> filtered = allResults.stream()
-                    .filter(r -> isFileActive(r.getFileId()))
-                    .collect(Collectors.toList());
-
-            if (filtered.isEmpty()) {
-                emitter.send(SseEmitter.event()
-                        .name("result")
-                        .data("{\"message\":\"관련 문서를 찾을 수 없습니다.\"}", MediaType.APPLICATION_JSON));
-                assistantContent.append("관련 문서를 찾을 수 없습니다.");
-            } else {
-                // 10. 검색 결과 SSE 스트리밍 (score 높은 순)
-                for (SearchResult result : filtered) {
-                    emitter.send(SseEmitter.event()
-                            .name("result")
-                            .data(result, MediaType.APPLICATION_JSON));
-                    assistantContent
-                            .append("[").append(result.getFileName()).append("] ")
-                            .append(result.getChunkText())
-                            .append("\n\n");
-                }
-            }
-
-            // 11. assistant 메시지 DB 저장
-            saveAssistantMessage(command.getRoomId(), assistantContent.toString().trim());
-
-            // 12. [done 이벤트]
-            emitter.send(SseEmitter.event()
-                    .name("done")
-                    .data("{\"totalResults\":" + filtered.size()
-                            + ",\"searchedFolders\":" + targetFolders.size() + "}",
-                            MediaType.APPLICATION_JSON));
-            emitter.complete();
-
-        } catch (Exception e) {
-            log.error("SSE 스트리밍 오류: roomId={}, error={}", command.getRoomId(), e.getMessage());
-            try {
-                emitter.send(SseEmitter.event()
-                        .name("error")
-                        .data("{\"message\":\"" + e.getMessage() + "\"}", MediaType.APPLICATION_JSON));
-            } catch (Exception ignored) {}
-            emitter.completeWithError(e);
-        }
+        saveAssistantMessage(command.getRoomId(), assistantContent.toString().trim());
     }
 
     @Transactional
@@ -180,15 +136,5 @@ public class ChatService {
                 .content(content)
                 .build();
         chatMessageRepository.save(assistantMessage);
-    }
-
-    private boolean isFileActive(Long fileId) {
-        try {
-            VdbFile file = fileRepository.finById(fileId);
-            return Boolean.TRUE.equals(file.getUseYn());
-        } catch (Exception e) {
-            log.warn("파일 활성화 여부 확인 실패: fileId={}", fileId);
-            return false;
-        }
     }
 }

@@ -30,6 +30,9 @@ public class VdbFile {
     @Column(name = "useyn", nullable = false)
     private Boolean useYn;
 
+    @Column(name = "keywords", length = 500)
+    private String keywords;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -53,5 +56,9 @@ public class VdbFile {
     public void update(String fileName, String filePath) {
         this.fileName = fileName;
         this.filePath = filePath;
+    }
+
+    public void updateKeywords(String keywords) {
+        this.keywords = keywords;
     }
 }

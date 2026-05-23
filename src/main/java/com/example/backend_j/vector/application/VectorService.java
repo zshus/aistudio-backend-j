@@ -134,5 +134,14 @@ public class VectorService {
         return FileResponse.form(list);
     }
 
+    @Transactional
+    public FileResponse updateKeywords(Long fileId, List<String> keywords) {
+        VdbFile file = fileRepository.finById(fileId);
+        String joined = keywords != null ? String.join(",", keywords) : "";
+        file.updateKeywords(joined);
+        fileRepository.save(file);
+        return FileResponse.form(file);
+    }
+
     
 }

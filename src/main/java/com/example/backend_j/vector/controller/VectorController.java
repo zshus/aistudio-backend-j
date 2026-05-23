@@ -7,6 +7,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.example.backend_j.vector.application.VectorService;
 import com.example.backend_j.vector.application.command.CreateFileCommand;
 import com.example.backend_j.vector.application.command.CreateFolderCommand;
+import com.example.backend_j.vector.application.command.ExtractKeywordsCommand;
 import com.example.backend_j.vector.application.command.RetriveFileCommand;
 import com.example.backend_j.vector.application.command.UpdateFileCommand;
 import com.example.backend_j.vector.application.command.UpdateFolderCommand;
@@ -14,14 +15,17 @@ import com.example.backend_j.vector.controller.request.FileRequest;
 import com.example.backend_j.vector.controller.request.FolderRequest;
 import com.example.backend_j.vector.controller.response.FileResponse;
 import com.example.backend_j.vector.controller.response.FolderResponse;
+import com.example.backend_j.vector.infrastructrue.KeywordClientService;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
+import java.util.Map;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 
@@ -31,6 +35,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RequestMapping("/api/v1/vector")
 public class VectorController {
     private final VectorService service;
+    private final KeywordClientService keywordClientService;
 
     //folder
     @PostMapping("/folder/create")
@@ -130,6 +135,46 @@ public class VectorController {
 
         List<FileResponse> list = service.getAllFileList(retriveFileCommand);
         return ResponseEntity.ok(list);
+    }
+
+    @GetMapping("/file/keywords/{fileId}")
+    public ResponseEntity<Map<String, Object>> getKeywords(@PathVariable Long fileId) {
+        List<String> keywords = keywordClientService.getKeywords(fileId);
+        return ResponseEntity.ok(Map.of("fileId", fileId, "keywords", keywords));
+    }
+
+    @PostMapping("/file/keywords/extract")
+    public ResponseEntity<Map<String, Object>> extractKeywords(@RequestBody FileRequest request) {
+        ExtractKeywordsCommand command = ExtractKeywordsCommand.builder()
+                .fileId(request.getFileId())
+                .folderId(request.getFolderId())
+                .fileName(request.getFileName())
+                .build();
+
+        List<String> keywords = keywordClientService.extractKeywords(
+                command.getFileId(), command.getFolderId(), command.getFileName());
+
+        return ResponseEntity.ok(Map.of(
+                "fileId", command.getFileId(),
+                "keywords", keywords
+        ));
+    }
+
+    @PostMapping("/file/keywords/save")
+    public ResponseEntity<Map<String, Object>> saveKeywords(@RequestBody FileRequest request) {
+        List<String> keywords = request.getKeywords() != null ? request.getKeywords() : List.of();
+
+        // PostgreSQL 저장
+        service.updateKeywords(request.getFileId(), keywords);
+
+        // OpenSearch 저장 (라우팅 키워드 사전)
+        keywordClientService.saveKeywords(
+                request.getFileId(), request.getFolderId(), request.getFileName(), keywords);
+
+        return ResponseEntity.ok(Map.of(
+                "fileId", request.getFileId(),
+                "keywords", keywords
+        ));
     }
     
     
