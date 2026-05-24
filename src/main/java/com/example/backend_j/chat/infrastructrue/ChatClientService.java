@@ -54,10 +54,7 @@ public class ChatClientService {
                     .bodyToFlux(String.class)
                     .doOnNext(line -> {
                         try {
-                            if (line.startsWith("data: ")) {
-                                String data = line.substring(6).trim();
-                                emitter.send(SseEmitter.event().name("message").data(data, MediaType.APPLICATION_JSON));
-                            }
+                            emitter.send(SseEmitter.event().data(line, MediaType.APPLICATION_JSON));
                         } catch (Exception e) {
                             log.warn("SSE 전송 실패: {}", e.getMessage());
                         }
