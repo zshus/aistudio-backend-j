@@ -1,6 +1,8 @@
 package com.example.backend_j.chat.infrastructrue;
 
 import com.example.backend_j.chat.controller.response.ChatMessageResponse;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -11,12 +13,14 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
 @Service
 public class ChatClientService {
 
     private final WebClient webClient;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public ChatClientService(@Value("${backend.p.url}") String backendPUrl) {
         this.webClient = WebClient.builder()
@@ -25,7 +29,9 @@ public class ChatClientService {
                 .build();
     }
 
-    public void streamQuery(
+    public record StreamResult(String content, String tool) {}
+
+    public StreamResult streamQuery(
             String query,
             List<ChatMessageResponse> history,
             List<Long> folderIds,
@@ -40,9 +46,18 @@ public class ChatClientService {
         }
 
         List<Map<String, String>> historyPayload = history.stream()
-                .map(h -> Map.of("role", h.getRole(), "content", h.getContent()))
+                .map(h -> {
+                    Map<String, String> entry = new HashMap<>();
+                    entry.put("role", h.getRole());
+                    entry.put("content", h.getContent() != null ? h.getContent() : "");
+                    if (h.getTool() != null) entry.put("tool", h.getTool());
+                    return entry;
+                })
                 .toList();
         body.put("conversation_history", historyPayload);
+
+        StringBuilder contentAccumulator = new StringBuilder();
+        AtomicReference<String> toolRef = new AtomicReference<>("general_chat");
 
         try {
             webClient.post()
@@ -53,6 +68,19 @@ public class ChatClientService {
                     .retrieve()
                     .bodyToFlux(String.class)
                     .doOnNext(line -> {
+                        // SSE 이벤트 파싱: content·tool 수집
+                        if (line.startsWith("data:")) {
+                            String json = line.substring(5).trim();
+                            try {
+                                JsonNode node = objectMapper.readTree(json);
+                                String type = node.path("type").asText();
+                                if ("token".equals(type)) {
+                                    contentAccumulator.append(node.path("content").asText());
+                                } else if ("llm_decision".equals(type)) {
+                                    toolRef.set(node.path("tool").asText("general_chat"));
+                                }
+                            } catch (Exception ignored) {}
+                        }
                         try {
                             emitter.send(SseEmitter.event().data(line, MediaType.APPLICATION_JSON));
                         } catch (Exception e) {
@@ -69,5 +97,7 @@ public class ChatClientService {
             log.error("ChatClientService 오류: {}", e.getMessage());
             emitter.completeWithError(e);
         }
+
+        return new StreamResult(contentAccumulator.toString(), toolRef.get());
     }
 }

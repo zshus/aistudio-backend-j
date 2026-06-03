@@ -28,6 +28,10 @@ public class ChatMessage {
     @Column(name = "content", nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    // assistant 메시지에만 사용: general_chat | rag_search | web_search
+    @Column(name = "tool", length = 50)
+    private String tool;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -37,9 +41,10 @@ public class ChatMessage {
     }
 
     @Builder
-    public ChatMessage(Long roomId, String role, String content) {
+    public ChatMessage(Long roomId, String role, String content, String tool) {
         this.roomId = roomId;
         this.role = role;
         this.content = content;
+        this.tool = tool;
     }
 }

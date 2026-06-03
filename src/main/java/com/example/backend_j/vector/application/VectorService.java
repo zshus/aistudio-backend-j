@@ -142,6 +142,11 @@ public class VectorService {
         return FileResponse.form(list);
     }
 
+    public boolean getFileUseYn(Long fileId) {
+        VdbFile file = fileRepository.finById(fileId);
+        return file.getUseYn() != null && file.getUseYn();
+    }
+
     @Transactional
     public FileResponse updateKeywords(Long fileId, List<String> keywords) {
         VdbFile file = fileRepository.finById(fileId);

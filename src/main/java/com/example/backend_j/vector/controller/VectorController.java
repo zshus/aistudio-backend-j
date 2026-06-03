@@ -151,8 +151,9 @@ public class VectorController {
                 .fileName(request.getFileName())
                 .build();
 
+        boolean useYn = service.getFileUseYn(command.getFileId());
         List<String> keywords = keywordClientService.extractKeywords(
-                command.getFileId(), command.getFolderId(), command.getFileName());
+                command.getFileId(), command.getFolderId(), command.getFileName(), useYn);
 
         return ResponseEntity.ok(Map.of(
                 "fileId", command.getFileId(),
@@ -164,12 +165,14 @@ public class VectorController {
     public ResponseEntity<Map<String, Object>> saveKeywords(@RequestBody FileRequest request) {
         List<String> keywords = request.getKeywords() != null ? request.getKeywords() : List.of();
 
+        boolean useYn = service.getFileUseYn(request.getFileId());
+
         // PostgreSQL 저장
         service.updateKeywords(request.getFileId(), keywords);
 
         // OpenSearch 저장 (라우팅 키워드 사전)
         keywordClientService.saveKeywords(
-                request.getFileId(), request.getFolderId(), request.getFileName(), keywords);
+                request.getFileId(), request.getFolderId(), request.getFileName(), keywords, useYn);
 
         return ResponseEntity.ok(Map.of(
                 "fileId", request.getFileId(),

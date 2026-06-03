@@ -16,6 +16,7 @@ public class ChatMessageResponse {
     private Long roomId;
     private String role;
     private String content;
+    private String tool;
     private LocalDateTime createdAt;
 
     public static ChatMessageResponse form(ChatMessage chatMessage) {
@@ -24,6 +25,7 @@ public class ChatMessageResponse {
                 .roomId(chatMessage.getRoomId())
                 .role(chatMessage.getRole())
                 .content(chatMessage.getContent())
+                .tool(chatMessage.getTool())
                 .createdAt(chatMessage.getCreatedAt())
                 .build();
     }

@@ -115,9 +115,7 @@ public class ChatService {
                 .map(Folder::getId)
                 .collect(Collectors.toList());
 
-        StringBuilder assistantContent = new StringBuilder();
-
-        chatClientService.streamQuery(
+        ChatClientService.StreamResult result = chatClientService.streamQuery(
                 command.getMessage(),
                 contextHistory,
                 folderIdList,
@@ -125,15 +123,16 @@ public class ChatService {
                 emitter
         );
 
-        saveAssistantMessage(command.getRoomId(), assistantContent.toString().trim());
+        saveAssistantMessage(command.getRoomId(), result.content().trim(), result.tool());
     }
 
     @Transactional
-    public void saveAssistantMessage(Long roomId, String content) {
+    public void saveAssistantMessage(Long roomId, String content, String tool) {
         ChatMessage assistantMessage = ChatMessage.builder()
                 .roomId(roomId)
                 .role("assistant")
                 .content(content)
+                .tool(tool)
                 .build();
         chatMessageRepository.save(assistantMessage);
     }

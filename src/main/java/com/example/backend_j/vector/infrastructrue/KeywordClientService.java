@@ -23,13 +23,14 @@ public class KeywordClientService {
     }
 
     @SuppressWarnings("unchecked")
-    public List<String> saveKeywords(Long fileId, Long folderId, String fileName, List<String> keywords) {
+    public List<String> saveKeywords(Long fileId, Long folderId, String fileName, List<String> keywords, boolean enabled) {
         try {
             Map<String, Object> body = Map.of(
                     "file_id", fileId,
                     "folder_id", folderId,
                     "file_name", fileName != null ? fileName : "",
-                    "keywords", keywords
+                    "keywords", keywords,
+                    "enabled", enabled
             );
 
             Map<String, Object> response = webClient.post()
@@ -133,12 +134,13 @@ public class KeywordClientService {
     }
 
     @SuppressWarnings("unchecked")
-    public List<String> extractKeywords(Long fileId, Long folderId, String fileName) {
+    public List<String> extractKeywords(Long fileId, Long folderId, String fileName, boolean enabled) {
         try {
             Map<String, Object> body = Map.of(
                     "file_id", fileId,
                     "folder_id", folderId,
-                    "file_name", fileName != null ? fileName : ""
+                    "file_name", fileName != null ? fileName : "",
+                    "enabled", enabled
             );
 
             Map<String, Object> response = webClient.post()
