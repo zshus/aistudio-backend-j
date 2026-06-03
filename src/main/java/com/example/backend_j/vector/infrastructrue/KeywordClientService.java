@@ -70,6 +70,68 @@ public class KeywordClientService {
         }
     }
 
+    public void deleteKeywords(Long fileId) {
+        try {
+            webClient.delete()
+                    .uri("/api/v1/keywords/{fileId}", fileId)
+                    .retrieve()
+                    .toBodilessEntity()
+                    .block();
+        } catch (Exception e) {
+            log.error("키워드 삭제 호출 실패: fileId={}, error={}", fileId, e.getMessage());
+        }
+    }
+
+    public void updateEnabledByFolder(Long folderId, boolean enabled) {
+        try {
+            Map<String, Object> body = Map.of(
+                    "folder_id", folderId,
+                    "enabled", enabled
+            );
+            webClient.patch()
+                    .uri("/api/v1/keywords/folder/enabled")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(body)
+                    .retrieve()
+                    .toBodilessEntity()
+                    .block();
+        } catch (Exception e) {
+            log.error("폴더 enabled 업데이트 호출 실패: folderId={}, error={}", folderId, e.getMessage());
+            throw new RuntimeException("폴더 enabled 업데이트 요청 실패: " + e.getMessage(), e);
+        }
+    }
+
+    public void deleteKeywordsByFolder(Long folderId) {
+        try {
+            webClient.delete()
+                    .uri("/api/v1/keywords/folder/{folderId}", folderId)
+                    .retrieve()
+                    .toBodilessEntity()
+                    .block();
+        } catch (Exception e) {
+            log.error("폴더 키워드 삭제 호출 실패: folderId={}, error={}", folderId, e.getMessage());
+        }
+    }
+
+    public void updateEnabled(Long fileId, boolean enabled) {
+        try {
+            Map<String, Object> body = Map.of(
+                    "file_id", fileId,
+                    "enabled", enabled
+            );
+            webClient.patch()
+                    .uri("/api/v1/keywords/enabled")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(body)
+                    .retrieve()
+                    .bodyToMono(Void.class)
+                    .block();
+        } catch (Exception e) {
+            log.error("enabled 업데이트 호출 실패: fileId={}, error={}", fileId, e.getMessage());
+            throw new RuntimeException("enabled 업데이트 요청 실패: " + e.getMessage(), e);
+        }
+    }
+
     @SuppressWarnings("unchecked")
     public List<String> extractKeywords(Long fileId, Long folderId, String fileName) {
         try {

@@ -19,6 +19,7 @@ import com.example.backend_j.vector.application.repository.FolderRepository;
 import com.example.backend_j.vector.application.repository.LocalUploadsRepository;
 import com.example.backend_j.vector.controller.response.FileResponse;
 import com.example.backend_j.vector.controller.response.FolderResponse;
+import com.example.backend_j.vector.infrastructrue.KeywordClientService;
 import com.example.backend_j.vector.infrastructrue.VectorClientService;
 
 @Slf4j
@@ -30,6 +31,7 @@ public class VectorService {
     private final FileRepository fileRepository;
     private final LocalUploadsRepository localUploadsRepository;
     private final VectorClientService vectorClientService;
+    private final KeywordClientService keywordClientService;
 
     @Transactional
     public FolderResponse createFolder(CreateFolderCommand command){
@@ -49,6 +51,8 @@ public class VectorService {
         folder.update(command.getFolderName(), command.getFolderType(), command.getUseYn());
         folderRepository.save(folder);
 
+        keywordClientService.updateEnabledByFolder(folder.getId(), command.getUseYn());
+
         return FolderResponse.form(folder);
     }
 
@@ -59,6 +63,7 @@ public class VectorService {
         fileRepository.deleteByFolderId(folder.getId());
 
         vectorClientService.deleteCollection(folder.getId());
+        keywordClientService.deleteKeywordsByFolder(folder.getId());
 
         return FolderResponse.form(folder);
     }
@@ -116,6 +121,8 @@ public class VectorService {
         find.update(command.getUseYn());
         fileRepository.save(find);
 
+        keywordClientService.updateEnabled(find.getId(), command.getUseYn());
+
         return FileResponse.form(find);
     }
 
@@ -125,6 +132,7 @@ public class VectorService {
         fileRepository.deleteById(command.getFileId());
 
         vectorClientService.deleteEmbed(find.getId(), find.getFolderId());
+        keywordClientService.deleteKeywords(find.getId());
 
         return FileResponse.form(find);
     }
